@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Uciekaj!</title>
+</head>
+<body>
+
+<h2>Uciekaj przed Mentzenem Jebanym Cwelem 👻</h2>
+<p>Zebrane pieniądze: <span id="score">0</span></p>
+<canvas id="gra" width="1500" height="600" style="border:1px solid black;"></canvas>
+
+<script>
+let canvas = document.getElementById("gra");
+let ctx = canvas.getContext("2d");
+
+// gracz
+let gracz = {x: 200, y: 200, size: 40, speed: 3};
+
+// wróg
+let wrog = {x: 0, y: 0, size: 40, speed: 2};
+
+// pieniądze
+let pieniadze = [];
+let score = 0;
+
+// sterowanie
+let klawisze = {};
+document.addEventListener("keydown", e => klawisze[e.key] = true);
+document.addEventListener("keyup", e => klawisze[e.key] = false);
+
+// ograniczenie ruchu do canvasu
+function ograniczDoCanvas(obj) {
+    obj.x = Math.max(0, Math.min(canvas.width - obj.size, obj.x));
+    obj.y = Math.max(0, Math.min(canvas.height - obj.size, obj.y));
+}
+
+// ruch gracza
+function ruchGracza() {
+    if (klawisze["ArrowUp"]) gracz.y -= gracz.speed;
+    if (klawisze["ArrowDown"]) gracz.y += gracz.speed;
+    if (klawisze["ArrowLeft"]) gracz.x -= gracz.speed;
+    if (klawisze["ArrowRight"]) gracz.x += gracz.speed;
+    ograniczDoCanvas(gracz);
+}
+
+// ruch wroga
+function ruchWroga() {
+    if (wrog.x < gracz.x) wrog.x += wrog.speed;
+    if (wrog.x > gracz.x) wrog.x -= wrog.speed;
+    if (wrog.y < gracz.y) wrog.y += wrog.speed;
+    if (wrog.y > gracz.y) wrog.y -= wrog.speed;
+    ograniczDoCanvas(wrog);
+}
+
+// kolizja z wrogiem
+function kolizja() {
+    if (
+        gracz.x < wrog.x + wrog.size &&
+        gracz.x + gracz.size > wrog.x &&
+        gracz.y < wrog.y + wrog.size &&
+        gracz.y + gracz.size > wrog.y
+    ) {
+        alert("Zostaleś zgwalc0ny i z4bity! 💀");
+        gracz.x = 200; gracz.y = 200;
+        losowaPozycjaWroga();
+        score = 0;
+        document.getElementById("score").innerText = score;
+    }
+}
+
+// kolizja z pieniędzmi
+function zbieraniePieniedzy() {
+    for (let i = pieniadze.length - 1; i >= 0; i--) {
+        let p = pieniadze[i];
+        if (
+            gracz.x < p.x + p.size &&
+            gracz.x + gracz.size > p.x &&
+            gracz.y < p.y + p.size &&
+            gracz.y + gracz.size > p.y
+        ) {
+            score++;
+            document.getElementById("score").innerText = score;
+            pieniadze.splice(i, 1);
+        }
+    }
+}
+
+// rysowanie
+function rysuj() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // gracz - sprite
+    ctx.drawImage(imgGracz, gracz.x, gracz.y, gracz.size, gracz.size);
+
+    // wróg - sprite
+    ctx.drawImage(imgWrog, wrog.x, wrog.y, wrog.size, wrog.size);
+
+    // pieniądze - żółte kwadraty
+    ctx.fillStyle = "gold";
+    for (let p of pieniadze) {
+        ctx.fillRect(p.x, p.y, p.size, p.size);
+    }
+}
+
+// generowanie pieniędzy
+function dodajPieniadze() {
+    if (pieniadze.length < 5) {
+        let p = {
+            size: 20,
+            x: Math.floor(Math.random() * (canvas.width - 20)),
+            y: Math.floor(Math.random() * (canvas.height - 20))
+        };
+        pieniadze.push(p);
+    }
+}
+
+// startowa pozycja wroga
+function losowaPozycjaWroga() {
+    do {
+        wrog.x = Math.floor(Math.random() * (canvas.width - wrog.size));
+        wrog.y = Math.floor(Math.random() * (canvas.height - wrog.size));
+    } while (
+        wrog.x < gracz.x + gracz.size &&
+        wrog.x + wrog.size > gracz.x &&
+        wrog.y < gracz.y + gracz.size &&
+        wrog.y + wrog.size > gracz.y
+    );
+}
+
+// główna pętla
+function gra() {
+    ruchGracza();
+    ruchWroga();
+    kolizja();
+    zbieraniePieniedzy();
+    dodajPieniadze();
+    rysuj();
+    requestAnimationFrame(gra);
+}
+
+// ===== SPRITE =====
+let imgGracz = new Image();
+imgGracz.src = "gracz.png";
+
+let imgWrog = new Image();
+imgWrog.src = "wrog.png";
+
+let zaladowane = 0;
+function startGry() {
+    zaladowane++;
+    if (zaladowane === 2) {
+        losowaPozycjaWroga();
+        gra();
+    }
+}
+
+imgGracz.onload = startGry;
+imgWrog.onload = startGry;
+</script>
+
+</body>
+</html>
